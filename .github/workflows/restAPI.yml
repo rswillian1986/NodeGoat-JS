@@ -31,7 +31,7 @@ jobs:
       - name: Veracode REST API
         run: |
           # Configuracoes de uso
-          veracodeAppName="Github Actions - ${{ github.repository }}"
+          veracodeAppName="Jenkins.JS"
           CaminhoArquivo="./veracode.zip"
           VERACODE_ID=${{ secrets.VID }}
           VERACODE_KEY=${{ secrets.VKEY }}
