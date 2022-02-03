@@ -32,15 +32,13 @@ jobs:
         env:
           VERACODE_ID: ${{ secrets.VID }} # Lembrar de criar as credenciais no Secrets
           VERACODE_KEY: ${{ secrets.VKEY }}
-          veracodeAppName: Github Actions - ${{ github.repository }}
+          veracodeAppName: Github Actions - $GITHUB_REPOSITORY
           CaminhoArquivo: './veracode.zip'
         run: |
           aut_Veracode () {
-              # Entrada de dados para a criacao do HMAC Header
               URLPATH=$1
               METHOD=$2
 
-              # Faz a criacao
               NONCE="$(cat /dev/random | xxd -p | head -c 32)"
               TS="$(($(date +%s%N)/1000))"
               encryptedNonce=$(echo "$NONCE" | xxd -r -p | openssl dgst -sha256 -mac HMAC -macopt hexkey:$VERACODE_KEY | cut -d ' ' -f 2)
