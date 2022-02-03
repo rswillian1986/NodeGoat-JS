@@ -29,12 +29,12 @@ jobs:
           path: .
       
       - name: Veracode REST API
-        run: |
-          # Configuracoes de uso
-          veracodeAppName="Jenkins.JS"
-          CaminhoArquivo="./veracode.zip"
-          VERACODE_ID=${{ secrets.VID }}
-          VERACODE_KEY=${{ secrets.VKEY }}
+        env:
+          VERACODE_ID: ${{ secrets.VID }} # Lembrar de criar as credenciais no Secrets
+          VERACODE_KEY: ${{ secrets.VKEY }}
+          veracodeAppName: Github Actions - ${{ github.repository }}
+          CaminhoArquivo: './veracode.zip'
+      - run: |
           # Funcao para autenticar
           aut_Veracode () {
               # Entrada de dados para a criacao do HMAC Header
