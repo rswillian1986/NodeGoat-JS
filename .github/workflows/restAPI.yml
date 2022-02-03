@@ -32,7 +32,7 @@ jobs:
         env:
           VERACODE_ID: ${{ secrets.VID }} # Lembrar de criar as credenciais no Secrets
           VERACODE_KEY: ${{ secrets.VKEY }}
-          veracodeAppName: Github Actions - $GITHUB_REPOSITORY
+          veracodeAppName: Github Actions - ${{ github.repository }}
           CaminhoArquivo: './veracode.zip'
         run: |
           aut_Veracode () {
