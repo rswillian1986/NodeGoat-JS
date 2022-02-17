@@ -9,7 +9,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
     steps:
       - uses: actions/checkout@v2
       - name: Use Node.js
@@ -28,6 +27,16 @@ jobs:
         with:
           name: pacoteVeracode
           path: veracode.zip
+  
+  Veracode_SCA:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Veracode SCA
+        env:
+          SRCCLR_API_TOKEN: ${{ secrets.SCA }} # Lembrar de criar as credenciais no Secrets
+        run: |
+          curl -sSL 'https://download.sourceclear.com/ci.sh' | bash -s – scan --update-advisor --pull-request
       
   Veracode_REST_API:
     runs-on: ubuntu-latest
@@ -41,7 +50,7 @@ jobs:
         env:
           VERACODE_ID: ${{ secrets.VID }} # Lembrar de criar as credenciais no Secrets
           VERACODE_KEY: ${{ secrets.VKEY }}
-          veracodeAppName: Github Actions - ${{ github.repository }}
+          veracodeAppName: Github - ${{ github.repository }}
           CaminhoArquivo: './veracode.zip'
         run: |
           aut_Veracode () {
@@ -99,21 +108,11 @@ jobs:
           criticality: 'VeryHigh'
           appname: '$AppName'
           createprofile: true
-          sandboxname: 'API'
+          sandboxname: 'HMG'
           createsandbox: true
           filepath: 'veracode.zip'
           deleteIncompleteScan: false
           version: ${{ github.run_id }}
-  
-  Veracode_SCA:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Veracode SCA
-        env:
-          SRCCLR_API_TOKEN: ${{ secrets.SCA }} # Lembrar de criar as credenciais no Secrets
-        run: |
-          curl -sSL 'https://download.sourceclear.com/ci.sh' | bash -s – scan --update-advisor --pull-request
   
   Veracode_PipelineScan:
     runs-on: ubuntu-latest
