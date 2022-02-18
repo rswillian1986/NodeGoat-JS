@@ -53,8 +53,6 @@ jobs:
           vkey: '$VKEY'
           criticality: 'VeryHigh'
           appname: '$AppName'
-          createprofile: true
-          sandboxname: 'API'
           createsandbox: true
           filepath: 'veracode.zip'
           deleteIncompleteScan: false
