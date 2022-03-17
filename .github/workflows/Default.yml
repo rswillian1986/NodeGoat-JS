@@ -28,7 +28,7 @@ jobs:
       env:
         VID: ${{ secrets.VID }} # Lembrar de criar as credenciais no Secrets
         VKEY: ${{ secrets.VKEY }}
-        AppName: pix-dict # Github Actions - ${{ github.repository }}
+        AppName: Github Actions - ${{ github.repository }}
       with:
         vid: '$VID'
         vkey: '$VKEY'
