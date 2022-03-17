@@ -43,7 +43,7 @@ jobs:
       env:
         SRCCLR_API_TOKEN: ${{ secrets.SCA }} # Lembrar de criar as credenciais no Secrets
       run: |
-        curl -sSL 'https://download.sourceclear.com/ci.sh' | bash -s – scan --update-advisor
+        curl -sSL 'https://download.sourceclear.com/ci.sh' | bash -s scan --update-advisor
 
     - name: build
       run: npm build
@@ -55,5 +55,5 @@ jobs:
         CaminhoArquivo: 'veracode.zip'
       run: |
         curl -sSO https://downloads.veracode.com/securityscan/pipeline-scan-LATEST.zip
-        unzip pipeline-scan-LATEST.zip
+        unzip -o pipeline-scan-LATEST.zip
         java -jar pipeline-scan.jar -vid $VID -vkey $VKEY -f $CaminhoArquivo --issue_details true
