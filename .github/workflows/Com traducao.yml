@@ -4,26 +4,54 @@ on:
     branches: [ master ]
   workflow_dispatch:
 jobs:
-  Resultados:
+  Download_Wrapper:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Veracode Pipeline Scan
+        run: |
+          curl -sSO https://tools.veracode.com/integrations/API-Wrappers/C%23/bin/VeracodeC%23API.zip
+          unzip VeracodeC%23API.zip
+      - name: Publicando Artefato
+        uses: actions/upload-artifact@v2
+        with:
+          name: WrapperVeracode
+          path: VeracodeC#API.exe
+
+  Download_XML:
     runs-on: windows-latest
     steps:
-      - name: Download Wrapper file
-        run: Invoke-WebRequest -Uri "https://repo1.maven.org/maven2/com/veracode/vosp/api/wrappers/vosp-api-wrappers-java/20.12.7.3/vosp-api-wrappers-java-20.12.7.3.jar" -OutFile "veracode-wrapper.jar"
+      - name: Download Artefato
+        uses: actions/download-artifact@v2
+        with:
+          name: WrapperVeracode
       - name: Download XML
         env:
           VID: ${{ secrets.VID }} # Lembrar de criar as credenciais no Secrets
           VKEY: ${{ secrets.VKEY }}
         run: |
           # Recebe as infos
-          [xml]$INFO = $(java -jar veracode-wrapper.jar -vid "$veracodeID" -vkey "$veracodeAPIkey" -action GetAppList | Select-String -Pattern 'Github Actions - IGDEXE/NodeGoat-JS')
+          [xml]$INFO = $(.\VeracodeC#API.exe -vid "$veracodeID" -vkey "$veracodeAPIkey" -action GetAppList | Select-String -Pattern 'Github Actions - IGDEXE/NodeGoat-JS')
           $appID = $INFO.app.app_id
-          [string]$INFO = java -jar veracode-wrapper.jar -vid $veracodeID -vkey $veracodeAPIkey -action GetAppBuilds -appid "$appID"
+          [string]$INFO = .\VeracodeC#API.exe -vid $veracodeID -vkey $veracodeAPIkey -action GetAppBuilds -appid "$appID"
           [xml]$INFO = $INFO.Replace(' xmlns=', ' _xmlns=')
           $buildINFO = $INFO.SelectSingleNode("//application[@app_id='$appId']")
           $buildID = $buildINFO.build.build_id
           # Gera o relatorio
-          $out = java -jar veracode-wrapper.jar -vid $veracodeID -vkey $veracodeAPIkey -action detailedreport -buildid "$buildID" -outputfilepath "${{ github.run_id }}.xml"
-    
+          $out = .\VeracodeC#API.exe -vid $veracodeID -vkey $veracodeAPIkey -action detailedreport -buildid "$buildID" -outputfilepath "${{ github.run_id }}.xml"
+      - name: Publicando Artefato
+        uses: actions/upload-artifact@v2
+        with:
+          name: WrapperVeracode
+          path: ${{ github.run_id }}.xml
+
+  Resultados:
+    runs-on: windows-latest
+    steps:
+      - name: Download Artefato
+        uses: actions/download-artifact@v2
+        with:
+          name: pacoteVeracode
+      
       - name: Resultado do Scan
         run: |
           function Traduzir {
