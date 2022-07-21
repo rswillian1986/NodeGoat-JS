@@ -19,6 +19,7 @@ jobs:
 
   Download_XML:
     runs-on: windows-latest
+    needs: Download_Wrapper
     steps:
       - name: Download Artefato
         uses: actions/download-artifact@v2
@@ -46,6 +47,7 @@ jobs:
 
   Resultados:
     runs-on: windows-latest
+    needs: Download_XML
     steps:
       - name: Download Artefato
         uses: actions/download-artifact@v2
