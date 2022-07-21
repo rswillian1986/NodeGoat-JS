@@ -1,4 +1,4 @@
-name: Pipeline_Ideal
+name: Resultados_PTBR
 on:
   push:
     branches: [ master ]

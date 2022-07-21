@@ -1,4 +1,4 @@
-name: Pipeline_Ideal
+name: Comparativo
 on:
   push:
     branches: [ master ]
