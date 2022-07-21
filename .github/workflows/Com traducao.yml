@@ -8,12 +8,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Use Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '12.x'
-      - name: Install dependencies
-        run: npm install
       - name: Empacotamento dos arquivos
         uses: thedoctor0/zip-release@master
         with:
@@ -43,8 +37,9 @@ jobs:
           vkey: '$VKEY'
           criticality: 'VeryHigh'
           appname: '$AppName'
-          scantimeout: '45'
-          scanpollinginterval: '60'
+          scantimeout: 45
+          scanpollinginterval: 30
+          deleteincompletescan: 1
           filepath: 'veracode.zip'
           scanallnonfataltoplevelmodules: true
           deleteIncompleteScan: false
