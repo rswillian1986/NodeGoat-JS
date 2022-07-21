@@ -4,49 +4,8 @@ on:
     branches: [ master ]
   workflow_dispatch:
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Empacotamento dos arquivos
-        uses: thedoctor0/zip-release@master
-        with:
-          filename: 'veracode.zip'
-          path: .
-      - name: Publicando Artefato
-        uses: actions/upload-artifact@v2
-        with:
-          name: pacoteVeracode
-          path: veracode.zip
-
-  Veracode_SAST:
-    runs-on: ubuntu-latest
-    needs: build
-    continue-on-error: true
-    steps:
-      - name: Download Artefato
-        uses: actions/download-artifact@v2
-        with:
-          name: pacoteVeracode
-      - uses: veracode/veracode-uploadandscan-action@master # Faz a analise da Veracode
-        env:
-          VID: ${{ secrets.VID }} # Lembrar de criar as credenciais no Secrets
-          VKEY: ${{ secrets.VKEY }}
-          AppName: Github Actions - ${{ github.repository }} - PTBR
-        with:
-          vid: '$VID'
-          vkey: '$VKEY'
-          criticality: 'VeryHigh'
-          appname: '$AppName'
-          scantimeout: 45
-          scanpollinginterval: 30
-          deleteincompletescan: 1
-          filepath: 'veracode.zip'
-          version: ${{ github.run_id }}
-
   Resultados:
     runs-on: windows-latest
-    needs: Veracode_SAST
     steps:
       - name: Download Wrapper file
         run: Invoke-WebRequest -Uri "https://repo1.maven.org/maven2/com/veracode/vosp/api/wrappers/vosp-api-wrappers-java/20.12.7.3/vosp-api-wrappers-java-20.12.7.3.jar" -OutFile "veracode-wrapper.jar"
@@ -54,8 +13,7 @@ jobs:
         env:
           VID: ${{ secrets.VID }} # Lembrar de criar as credenciais no Secrets
           VKEY: ${{ secrets.VKEY }}
-          CaminhoArquivo: './veracode.zip'
-          numeroVersao: ${{ github.run_id }}
+          veracodeAppName: 'Github Actions - IGDEXE/NodeGoat-JS'
         run: |
           # Recebe as infos
           [xml]$INFO = $(java -jar veracode-wrapper.jar -vid "$veracodeID" -vkey "$veracodeAPIkey" -action GetAppList | Select-String -Pattern $veracodeAppName)
