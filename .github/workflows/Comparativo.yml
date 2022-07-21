@@ -53,6 +53,7 @@ jobs:
           vkey: '$VKEY'
           criticality: 'VeryHigh'
           appname: '$AppName'
+          scanpollinginterval: '60'
           scantimeout: '45'
           filepath: 'veracode.zip'
           deleteIncompleteScan: false

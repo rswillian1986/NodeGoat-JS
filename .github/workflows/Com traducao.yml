@@ -37,14 +37,16 @@ jobs:
         env:
           VID: ${{ secrets.VID }} # Lembrar de criar as credenciais no Secrets
           VKEY: ${{ secrets.VKEY }}
-          AppName: Github Actions - ${{ github.repository }}
+          AppName: Github Actions - ${{ github.repository }} - PTBR
         with:
           vid: '$VID'
           vkey: '$VKEY'
           criticality: 'VeryHigh'
           appname: '$AppName'
-          createsandbox: true
+          scantimeout: '45'
+          scanpollinginterval: '60'
           filepath: 'veracode.zip'
+          scanallnonfataltoplevelmodules: true
           deleteIncompleteScan: false
           version: ${{ github.run_id }}
 
@@ -53,13 +55,25 @@ jobs:
     needs: Veracode_SAST
     steps:
       - name: Download Wrapper file
-        run: Invoke-WebRequest -Uri "https://repo1.maven.org/maven2/com/veracode/vosp/api/wrappers/vosp-api-wrappers-java/20.12.7.3/vosp-api-wrappers-java-20.12.7.3.jar" -OutFile "VeracodeJavaAPI.jar"
+        run: Invoke-WebRequest -Uri "https://repo1.maven.org/maven2/com/veracode/vosp/api/wrappers/vosp-api-wrappers-java/20.12.7.3/vosp-api-wrappers-java-20.12.7.3.jar" -OutFile "veracode-wrapper.jar"
       - name: Download XML
         env:
           VID: ${{ secrets.VID }} # Lembrar de criar as credenciais no Secrets
           VKEY: ${{ secrets.VKEY }}
           CaminhoArquivo: './veracode.zip'
           numeroVersao: ${{ github.run_id }}
+        run: |
+          # Recebe as infos
+          [xml]$INFO = $(java -jar veracode-wrapper.jar -vid "$veracodeID" -vkey "$veracodeAPIkey" -action GetAppList | Select-String -Pattern $veracodeAppName)
+          $appID = $INFO.app.app_id
+          [string]$INFO = java -jar veracode-wrapper.jar -vid $veracodeID -vkey $veracodeAPIkey -action GetAppBuilds -appid "$appID"
+          [xml]$INFO = $INFO.Replace(' xmlns=', ' _xmlns=')
+          $buildINFO = $INFO.SelectSingleNode("//application[@app_id='$appId']")
+          $buildID = $buildINFO.build.build_id
+          # Gera o relatorio
+          $out = java -jar veracode-wrapper.jar -vid $veracodeID -vkey $veracodeAPIkey -action detailedreport -buildid "$buildID" -outputfilepath "${{ github.run_id }}.xml"
+    
+      - name: Resultado do Scan
         run: |
           function Traduzir {
               param (
@@ -86,18 +100,6 @@ jobs:
               }
           }
 
-          # Recebe as infos
-          [xml]$INFO = $(VeracodeAPI.exe -vid "$veracodeID" -vkey "$veracodeAPIkey" -action GetAppList | Select-String -Pattern $veracodeAppName)
-          $appID = $INFO.app.app_id
-          [string]$INFO = VeracodeAPI.exe -vid $veracodeID -vkey $veracodeAPIkey -action GetAppBuilds -appid "$appID"
-          [xml]$INFO = $INFO.Replace(' xmlns=', ' _xmlns=')
-          $buildINFO = $INFO.SelectSingleNode("//application[@app_id='$appId']")
-          $buildID = $buildINFO.build.build_id
-          # Gera o relatorio
-          $out = VeracodeAPI.exe -vid $veracodeID -vkey $veracodeAPIkey -action detailedreport -buildid "$buildID" -outputfilepath "${{ github.run_id }}.xml"
-    
-      - name: Resultado do Scan
-        run: |
           # Recebendo informacoes
           $securityINFO = [xml](Get-Content "${{ github.run_id }}.xml")
           $notaLetra = $securityINFO.detailedreport.'static-analysis'.rating
