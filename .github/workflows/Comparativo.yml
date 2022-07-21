@@ -49,7 +49,6 @@ jobs:
           appname: '$AppName'
           scanpollinginterval: 30
           scantimeout: 45
-          deleteincompletescan: 1
           filepath: 'veracode.zip'
           version: ${{ github.run_id }}
 
