@@ -1,0 +1,142 @@
+name: Pipeline_Ideal
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '12.x'
+      - name: Install dependencies
+        run: npm install
+      - name: Empacotamento dos arquivos
+        uses: thedoctor0/zip-release@master
+        with:
+          filename: 'veracode.zip'
+          path: .
+      - name: Publicando Artefato
+        uses: actions/upload-artifact@v2
+        with:
+          name: pacoteVeracode
+          path: veracode.zip
+
+  Veracode_SAST:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Download Artefato
+        uses: actions/download-artifact@v2
+        with:
+          name: pacoteVeracode
+      - uses: veracode/veracode-uploadandscan-action@master # Faz a analise da Veracode
+        env:
+          VID: ${{ secrets.VID }} # Lembrar de criar as credenciais no Secrets
+          VKEY: ${{ secrets.VKEY }}
+          AppName: Github Actions - ${{ github.repository }}
+        with:
+          vid: '$VID'
+          vkey: '$VKEY'
+          criticality: 'VeryHigh'
+          appname: '$AppName'
+          createsandbox: true
+          filepath: 'veracode.zip'
+          deleteIncompleteScan: false
+          version: ${{ github.run_id }}
+
+  Resultados:
+    runs-on: windows-latest
+    needs: Veracode_SAST
+    steps:
+      - name: Download Wrapper file
+        run: Invoke-WebRequest -Uri "https://repo1.maven.org/maven2/com/veracode/vosp/api/wrappers/vosp-api-wrappers-java/20.12.7.3/vosp-api-wrappers-java-20.12.7.3.jar" -OutFile "VeracodeJavaAPI.jar"
+      - name: Download XML
+        env:
+          VID: ${{ secrets.VID }} # Lembrar de criar as credenciais no Secrets
+          VKEY: ${{ secrets.VKEY }}
+          CaminhoArquivo: './veracode.zip'
+          numeroVersao: ${{ github.run_id }}
+        run: |
+          function Traduzir {
+              param (
+                  [parameter(position=0,Mandatory=$True)]
+                  $texto,
+                  [parameter(position=1)]
+                  $idiomaAlvo = "pt"
+              )
+
+              # Utiliza a API do Google para traduzir
+              Try {
+                  $Uri = “https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=$($idiomaAlvo)&dt=t&q=$texto”
+                  $Response = Invoke-RestMethod -Uri $Uri -Method Get
+                  # Retorna o valor traduzido
+                  $traducao = $Response[0].SyncRoot | foreach { $_[0] }
+                  return $traducao
+              }
+              Catch {
+                  # Recebe o erro
+                  $ErrorMessage = $_.Exception.Message # Recebe o erro
+                  # Exibe a mensagem de erro
+                  Write-Host "Erro ao traduzir"
+                  Write-host $ErrorMessage
+              }
+          }
+
+          # Recebe as infos
+          [xml]$INFO = $(VeracodeAPI.exe -vid "$veracodeID" -vkey "$veracodeAPIkey" -action GetAppList | Select-String -Pattern $veracodeAppName)
+          $appID = $INFO.app.app_id
+          [string]$INFO = VeracodeAPI.exe -vid $veracodeID -vkey $veracodeAPIkey -action GetAppBuilds -appid "$appID"
+          [xml]$INFO = $INFO.Replace(' xmlns=', ' _xmlns=')
+          $buildINFO = $INFO.SelectSingleNode("//application[@app_id='$appId']")
+          $buildID = $buildINFO.build.build_id
+          # Gera o relatorio
+          $out = VeracodeAPI.exe -vid $veracodeID -vkey $veracodeAPIkey -action detailedreport -buildid "$buildID" -outputfilepath "${{ github.run_id }}.xml"
+    
+      - name: Resultado do Scan
+        run: |
+          # Recebendo informacoes
+          $securityINFO = [xml](Get-Content "${{ github.run_id }}.xml")
+          $notaLetra = $securityINFO.detailedreport.'static-analysis'.rating
+          $notaScore = $securityINFO.detailedreport.'static-analysis'.score
+          $veracodeAppName = $securityINFO.detailedreport.app_name
+          $numeroVersao = $securityINFO.detailedreport.version
+          $appID = $securityINFO.detailedreport.app_id
+          $quemEnviou = $securityINFO.detailedreport.submitter
+          $politica = $securityINFO.detailedreport.policy_name
+          $complicanceStatus = $securityINFO.detailedreport.policy_compliance_status
+          # Exibe os resultados
+          Write-Host "Resultado do Scan: $numeroVersao"
+          Write-Host "Nome App: $veracodeAppName - App ID: $appID"
+          Write-Host "Enviado por: $quemEnviou"
+          Write-Host "Politica: $politica"
+          Write-Host "Nota: $notaLetra - Score: $notaScore - Resultado: $complicanceStatus"
+          Write-Host "Lista dos problemas encontrados:"
+          # Recebe os leveis e reordena
+          $levels = $securityINFO.detailedreport.severity.level
+          [array]::Reverse($levels)
+          foreach ($level in $levels) {
+              Write-Host "Prioridade: $level"
+              # Recebe as informações
+              $itensCategoria = $securityINFO.detailedreport.severity[$level].category
+              foreach ($item in $itensCategoria) {
+                  $idCWE = $item.cwe.cweid
+                  $nomeCategoria = $item.categoryname
+                  $descricao = $item.desc.para.text
+                  $recomendacoes = $item.recommendations.para.text
+                  # Faz a tradução
+                  $descricao = Traduzir $descricao
+                  $recomendacoes = Traduzir $recomendacoes
+                  # Exibe o resultado
+                  Write-Host "Categoria: $nomeCategoria - ID CWE: $idCWE"
+                  Write-Host "Descrição: $descricao"
+                  Write-Host " "
+                  Write-Host "Remediação: $recomendacoes"
+                  Write-Host " "
+                  Write-Host " "
+              }
+              Write-Host "..."
+          }
