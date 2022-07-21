@@ -13,10 +13,9 @@ jobs:
         env:
           VID: ${{ secrets.VID }} # Lembrar de criar as credenciais no Secrets
           VKEY: ${{ secrets.VKEY }}
-          veracodeAppName: 'Github Actions - IGDEXE/NodeGoat-JS'
         run: |
           # Recebe as infos
-          [xml]$INFO = $(java -jar veracode-wrapper.jar -vid "$veracodeID" -vkey "$veracodeAPIkey" -action GetAppList | Select-String -Pattern $veracodeAppName)
+          [xml]$INFO = $(java -jar veracode-wrapper.jar -vid "$veracodeID" -vkey "$veracodeAPIkey" -action GetAppList | Select-String -Pattern 'Github Actions - IGDEXE/NodeGoat-JS')
           $appID = $INFO.app.app_id
           [string]$INFO = java -jar veracode-wrapper.jar -vid $veracodeID -vkey $veracodeAPIkey -action GetAppBuilds -appid "$appID"
           [xml]$INFO = $INFO.Replace(' xmlns=', ' _xmlns=')
