@@ -27,8 +27,8 @@ jobs:
           name: WrapperVeracode
       - name: Download XML
         env:
-          VID: ${{ secrets.VID }} # Lembrar de criar as credenciais no Secrets
-          VKEY: ${{ secrets.VKEY }}
+          veracodeID: ${{ secrets.VID }}
+          veracodeAPIkey: ${{ secrets.VKEY }}
         run: |
           # Recebe as infos
           [xml]$INFO = $(.\VeracodeC#API.exe -vid "$veracodeID" -vkey "$veracodeAPIkey" -action GetAppList | Select-String -Pattern 'Github Actions - IGDEXE/NodeGoat-JS')
