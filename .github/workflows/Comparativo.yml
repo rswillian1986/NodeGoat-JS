@@ -51,7 +51,6 @@ jobs:
           scantimeout: 45
           deleteincompletescan: 1
           filepath: 'veracode.zip'
-          deleteIncompleteScan: false
           version: ${{ github.run_id }}
 
   Veracode_PipelineScan:
