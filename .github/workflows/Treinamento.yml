@@ -37,7 +37,7 @@ jobs:
           vid: '$VeracodeID'
           vkey: '$VeracodeKey'
           criticality: 'VeryHigh'
-          appname: 'NodeGoat-Demo'
+          appname: 'NodeGoat-Demo-will'
           createprofile: true
           filepath: 'veracode.zip'
           deleteIncompleteScan: false
